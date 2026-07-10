@@ -46,13 +46,6 @@ def mode_browser():
 
 def mode_desktop():
     """桌面窗口模式——原生窗口，无需浏览器"""
-    # 关闭 PyInstaller 启动画面
-    try:
-        import pyi_splash
-        pyi_splash.close()
-    except ImportError:
-        pass
-
     import webview
     url = f'http://{FLASK_HOST}:{FLASK_PORT}'
 

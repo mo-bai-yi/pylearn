@@ -54,7 +54,6 @@ def build():
         '--distpath', DIST_DIR,
         '--workpath', BUILD_DIR,
         '--add-data', f'version.json{os.pathsep}.',
-        '--splash', 'splash.png',
         '--hidden-import', 'yaml',
         '--hidden-import', 'flask',
         '--hidden-import', 'jinja2',
