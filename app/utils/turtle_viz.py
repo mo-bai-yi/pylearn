@@ -7,6 +7,8 @@
 import subprocess
 import sys
 import json
+import os
+from app.utils.code_runner import _PYTHON_EXE
 
 
 def parse_turtle_code(source: str, timeout: int = 5) -> dict:
@@ -80,12 +82,17 @@ def parse_turtle_code(source: str, timeout: int = 5) -> dict:
         'print("CMDS:"+json.dumps(_m.cmds))\n'
     )
 
+    python_exe = _PYTHON_EXE or sys.executable
+    kwargs = {}
+    if os.name == 'nt':
+        kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
     try:
         result = subprocess.run(
-            [sys.executable, '-c', runner],
+            [python_exe, '-c', runner],
             capture_output=True,
             text=True,
             timeout=timeout,
+            **kwargs,
         )
 
         error = None
