@@ -107,6 +107,16 @@ def publish_to_gh_pages(target_dir: Path, version_info: dict):
     old_cwd = os.getcwd()
     os.chdir(HERE)
 
+    # 支持 GITHUB_TOKEN 环境变量认证
+    token = os.environ.get('GITHUB_TOKEN')
+    push_url = None
+    if token:
+        # 获取当前 remote 地址，嵌入 token
+        result = subprocess.run(['git', 'remote', 'get-url', 'origin'], capture_output=True, text=True, check=True)
+        base_url = result.stdout.strip()
+        if base_url.startswith('https://'):
+            push_url = base_url.replace('https://', f'https://oauth2:{token}@')
+
     try:
         # 检查 git 状态
         result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True)
@@ -145,7 +155,10 @@ def publish_to_gh_pages(target_dir: Path, version_info: dict):
         # 提交并推送
         subprocess.run(['git', 'add', '-A'], check=True)
         subprocess.run(['git', 'commit', '-m', f'发布 v{version_info["version"]}'], check=True)
-        subprocess.run(['git', 'push', 'origin', 'gh-pages', '--force'], check=True)
+        push_cmd = ['git', 'push', 'origin', 'gh-pages', '--force']
+        if push_url:
+            push_cmd = ['git', 'push', push_url, 'gh-pages', '--force']
+        subprocess.run(push_cmd, check=True)
 
         print(f'✅ 已推送到 gh-pages 分支')
         return True
