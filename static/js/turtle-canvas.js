@@ -15,10 +15,11 @@ let turtleSpeed = 3;
 // 所有已绘制的线条
 let turtleLines = [];
 
-// 缩放状态
-let currentScale = 1;
-let currentOffsetX = 0;
-let currentOffsetY = 0;
+// 缩放状态（从 localStorage 恢复，跨页面保持）
+const _ZOOM_KEY = 'pylearn_turtle_zoom';
+let currentScale = parseFloat(localStorage.getItem(_ZOOM_KEY + '_scale')) || 1;
+let currentOffsetX = parseFloat(localStorage.getItem(_ZOOM_KEY + '_ox')) || 0;
+let currentOffsetY = parseFloat(localStorage.getItem(_ZOOM_KEY + '_oy')) || 0;
 
 const CANVAS_W = 500, CANVAS_H = 500;
 
@@ -107,6 +108,14 @@ function addLine(x1, y1, x2, y2) {
     });
 }
 
+function _saveZoomState() {
+    try {
+        localStorage.setItem(_ZOOM_KEY + '_scale', String(currentScale));
+        localStorage.setItem(_ZOOM_KEY + '_ox', String(currentOffsetX));
+        localStorage.setItem(_ZOOM_KEY + '_oy', String(currentOffsetY));
+    } catch (_) {}
+}
+
 function clearTurtleCanvas() {
     if (!turtleCtx) initTurtleCanvas();
     if (!turtleCtx) return;
@@ -116,7 +125,7 @@ function clearTurtleCanvas() {
         turtleAnimId = null;
     }
 
-    // 重置状态
+    // 重置海龟状态，但保持缩放不变
     turtleX = 250;
     turtleY = 250;
     turtleAngle = 0;
@@ -127,9 +136,6 @@ function clearTurtleCanvas() {
     turtleCmdIndex = 0;
     turtleCommands = [];
     turtleLines = [];
-    currentScale = 1;
-    currentOffsetX = 0;
-    currentOffsetY = 0;
 
     fullRedraw();
 }
@@ -340,12 +346,6 @@ function renderTurtleCommands(commands, speed) {
 
     if (turtleCommands.length === 0) return;
 
-    // 自动适配缩放
-    const fit = calcAutoFit(turtleCommands);
-    currentScale = fit.scale;
-    currentOffsetX = fit.ox;
-    currentOffsetY = fit.oy;
-
     // 更新缩放标签
     updateZoomLabel();
 
@@ -387,6 +387,7 @@ function zoomIn() {
     if (!turtleCtx) return;
     zoomAtCenter(1.3);
     updateZoomLabel();
+    _saveZoomState();
     fullRedraw();
 }
 
@@ -394,6 +395,7 @@ function zoomOut() {
     if (!turtleCtx) return;
     zoomAtCenter(1 / 1.3);
     updateZoomLabel();
+    _saveZoomState();
     fullRedraw();
 }
 
@@ -403,6 +405,7 @@ function zoomReset() {
     currentOffsetX = 0;
     currentOffsetY = 0;
     updateZoomLabel();
+    _saveZoomState();
     fullRedraw();
 }
 
@@ -413,6 +416,7 @@ function zoomAutoFit() {
     currentOffsetX = fit.ox;
     currentOffsetY = fit.oy;
     updateZoomLabel();
+    _saveZoomState();
     fullRedraw();
 }
 
