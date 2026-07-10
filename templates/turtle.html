@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h1>🐢 Turtle 画板</h1>
+    <p>用代码画画！在下方编辑器中编写 turtle 代码，然后点击运行</p>
+</div>
+
+<div class="turtle-layout">
+    <!-- 左侧：画板 -->
+    <div class="turtle-canvas-wrap" style="flex-direction:column;">
+        <canvas id="turtle-canvas" width="500" height="500"></canvas>
+        <div class="turtle-controls" style="padding:8px;gap:6px;">
+            <button class="btn btn-outline" onclick="zoomIn()" style="font-size:13px;padding:4px 12px;">🔍+</button>
+            <button class="btn btn-outline" onclick="zoomOut()" style="font-size:13px;padding:4px 12px;">🔍−</button>
+            <button class="btn btn-outline" onclick="zoomAutoFit()" style="font-size:13px;padding:4px 12px;">⊞ 适配</button>
+            <button class="btn btn-outline" onclick="zoomReset()" style="font-size:13px;padding:4px 12px;">↺ 1:1</button>
+            <span id="zoom-label" style="font-size:13px;color:var(--text-muted);min-width:40px;">100%</span>
+        </div>
+    </div>
+
+    <!-- 右侧：编辑器 + 控件 -->
+    <div class="playground-pane" style="height:100%;">
+        <div class="pane-header">
+            <span>📝 Turtle 代码</span>
+        </div>
+        <div class="toolbar turtle-controls">
+            <button class="btn btn-primary" onclick="runTurtleCode()">▶ 运行</button>
+            <button class="btn btn-outline" onclick="clearTurtle()">🗑 清空</button>
+            <button class="btn btn-outline" onclick="resetTurtle()">↺ 重置</button>
+            <select id="turtle-example" class="btn btn-outline" onchange="loadTurtleExample()" style="appearance:auto;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:white;font-size:13px;">
+                <option value="">选择示例...</option>
+                <option value="正方形">正方形</option>
+                <option value="五角星">五角星</option>
+                <option value="螺旋">螺旋</option>
+            </select>
+            <label style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
+                速度：
+                <input type="range" id="turtle-speed" min="1" max="10" value="3" style="width:80px;">
+                <span id="turtle-speed-label">3</span>
+            </label>
+        </div>
+        <div class="pane-body" style="display:flex;flex-direction:column;">
+            <textarea id="turtle-editor" style="flex:1;"># Turtle 画图
+# 示例：画一个正方形
+
+import turtle
+t = turtle.Turtle()
+t.speed(5)
+
+for i in range(4):
+    t.forward(100)
+    t.right(90)
+
+t.hideturtle()
+</textarea>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<script src="{{ url_for('static', filename='js/turtle-canvas.js') }}"></script>
+<script>
+    const turtleEditor = CodeMirror.fromTextArea(document.getElementById('turtle-editor'), {
+        mode: 'python',
+        lineNumbers: true,
+        indentUnit: 4,
+        theme: 'material-darker',
+    });
+    turtleEditor.setSize(null, '100%');
+
+    // 速度滑块
+    document.getElementById('turtle-speed').addEventListener('input', function() {
+        document.getElementById('turtle-speed-label').textContent = this.value;
+    });
+
+    async function runTurtleCode() {
+        const code = turtleEditor.getValue();
+        const resp = await fetch('/turtle/parse', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code})
+        });
+        const data = await resp.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        const speed = parseInt(document.getElementById('turtle-speed').value);
+        renderTurtleCommands(data.commands, speed);
+    }
+
+    function clearTurtle() {
+        clearTurtleCanvas();
+    }
+
+    function resetTurtle() {
+        turtleEditor.setValue('# Turtle 画图\n# 示例：画一个正方形\n\nimport turtle\nt = turtle.Turtle()\nt.speed(5)\n\nfor i in range(4):\n    t.forward(100)\n    t.right(90)\n\nt.hideturtle()');
+        clearTurtleCanvas();
+    }
+
+    function loadTurtleExample() {
+        const sel = document.getElementById('turtle-example');
+        const val = sel.value;
+        if (!val) return;
+
+        const examples = {{ examples | tojson }};
+        if (examples[val]) {
+            turtleEditor.setValue(examples[val]);
+            sel.value = '';
+        }
+    }
+</script>
+{% endblock %}

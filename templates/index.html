@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+    <h1>🐍 开始学 Python</h1>
+    <p>零基础友好的互动式 Python 学习平台 · 边学边练</p>
+</div>
+
+<div class="progress-bar">
+    <div class="progress-fill" style="width: {{ (completed / total * 100) if total else 0 }}%"></div>
+</div>
+<p class="progress-text">学习进度：{{ completed }} / {{ total }} 章</p>
+
+<div class="card-grid card-grid-2" style="margin-top:32px">
+    <a href="{{ url_for('lessons.lesson_list') }}" class="card-link">
+        <div class="card">
+            <div class="card-icon blue">📖</div>
+            <h3>互动教程</h3>
+            <p>从 Hello World 到函数，一步一步学 Python。每节课都配有可运行的代码示例。</p>
+        </div>
+    </a>
+
+    <a href="/challenges" class="card-link">
+        <div class="card">
+            <div class="card-icon green">🎮</div>
+            <h3>编程闯关</h3>
+            <p>通过挑战来检验你的学习成果。每过一关，功力更进一步。</p>
+        </div>
+    </a>
+
+    <a href="{{ url_for('playground.playground') }}" class="card-link">
+        <div class="card">
+            <div class="card-icon orange">💻</div>
+            <h3>代码演示台</h3>
+            <p>自由编写和运行 Python 代码，实时查看输出结果。随时练习，大胆尝试。</p>
+        </div>
+    </a>
+
+    <a href="/turtle" class="card-link">
+        <div class="card">
+            <div class="card-icon purple">🐢</div>
+            <h3>Turtle 画板</h3>
+            <p>用代码画画！通过海龟绘图直观理解循环和函数的执行过程。</p>
+        </div>
+    </a>
+</div>
+
+<h2 style="margin-top:48px; font-size:20px;">📚 课程目录</h2>
+<div style="margin-top:16px; display:flex; flex-direction:column; gap:12px;">
+    {% for lesson in lessons %}
+    <a href="{{ url_for('lessons.lesson_view', lesson_id=lesson.id) }}" class="lesson-item">
+        <div class="num">{{ loop.index }}</div>
+        <div class="info">
+            <h3>{{ lesson.title }}</h3>
+            <p>点击开始学习</p>
+        </div>
+        <div class="status">→</div>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

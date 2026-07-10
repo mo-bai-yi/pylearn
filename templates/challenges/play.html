@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+    <a href="{{ url_for('challenges.challenge_list') }}" style="color:var(--primary);text-decoration:none;">← 返回关卡列表</a>
+    <h1 style="font-size:24px;margin:0;">🎮 {{ challenge.title }}</h1>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;height:calc(100vh - 180px);">
+    <!-- 左侧：题目 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;overflow-y:auto;">
+        <h2 style="font-size:18px;margin-bottom:12px;">📝 题目描述</h2>
+        <div style="line-height:1.7;white-space:pre-wrap;">{{ description }}</div>
+
+        <h2 style="font-size:18px;margin:20px 0 12px;">✅ 测试用例</h2>
+        {% for test in test_cases %}
+        <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px;">
+            <div><strong>输入：</strong><code>{{ test.input or '（无）' }}</code></div>
+            <div><strong>预期输出：</strong><code>{{ test.expected[:80] }}{% if test.expected|length > 80 %}...{% endif %}</code></div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 右侧：代码编辑器 -->
+    <div class="playground-pane" style="height:100%;">
+        <div class="pane-header">
+            <span>💻 你的答案</span>
+        </div>
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="runChallenge()">▶ 运行</button>
+            <button class="btn btn-success" onclick="submitChallenge()">✅ 提交</button>
+            <button class="btn btn-outline" onclick="resetChallenge()">↺ 重置</button>
+        </div>
+        <div class="pane-body" style="display:flex;flex-direction:column;">
+            <textarea id="challenge-editor" style="flex:1;">{{ initial_code }}</textarea>
+            <div id="challenge-output" class="output-area empty" style="max-height:250px;border-top:1px solid var(--border);">点击「运行」或「提交」查看结果...</div>
+            <div id="challenge-result" style="padding:8px 16px;font-size:14px;font-weight:600;display:none;border-top:1px solid var(--border);"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<script>
+    const challengeEditor = CodeMirror.fromTextArea(document.getElementById('challenge-editor'), {
+        mode: 'python',
+        lineNumbers: true,
+        indentUnit: 4,
+        theme: 'material-darker',
+    });
+    challengeEditor.setSize(null, '100%');
+
+    const challengeId = {{ challenge.id | tojson }};
+    const testCases = {{ test_cases | tojson }};
+
+    function setOutput(text, type) {
+        const out = document.getElementById('challenge-output');
+        out.className = 'output-area';
+        out.innerHTML = escHtml(text);
+    }
+
+    async function runChallenge() {
+        const out = document.getElementById('challenge-output');
+        out.textContent = '⏳ 运行中...';
+        document.getElementById('challenge-result').style.display = 'none';
+
+        const resp = await fetch('/api/run', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: challengeEditor.getValue(), timeout: 5})
+        });
+        const data = await resp.json();
+
+        let html = '';
+        if (data.stdout) html += escHtml(data.stdout);
+        if (data.stderr) html += '<div class="stderr">' + escHtml(data.stderr) + '</div>';
+        if (data.error) html += '<div class="error-msg">' + escHtml(data.error) + '</div>';
+        if (!html) html = '✅ 执行完成（无输出）';
+        out.innerHTML = html;
+    }
+
+    async function submitChallenge() {
+        const resultDiv = document.getElementById('challenge-result');
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = '⏳ 正在校验...';
+
+        const resp = await fetch('/api/check', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                code: challengeEditor.getValue(),
+                expected: testCases[0]?.expected || ''
+            })
+        });
+        const data = await resp.json();
+
+        // 保存进度
+        await fetch('/challenges/api/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                code: challengeEditor.getValue(),
+                challenge_id: challengeId
+            })
+        });
+
+        if (data.passed) {
+            resultDiv.style.color = 'var(--success)';
+            resultDiv.textContent = '✅ 通关！答案正确！';
+        } else {
+            resultDiv.style.color = 'var(--danger)';
+            resultDiv.innerHTML = data.message || '❌ 答案不正确，再试试';
+        }
+
+        const out = document.getElementById('challenge-output');
+        out.innerHTML = '';
+        if (data.stdout) out.innerHTML += escHtml(data.stdout);
+    }
+
+    function resetChallenge() {
+        challengeEditor.setValue({{ initial_code | tojson }});
+        const out = document.getElementById('challenge-output');
+        out.className = 'output-area empty';
+        out.textContent = '点击「运行」或「提交」查看结果...';
+        document.getElementById('challenge-result').style.display = 'none';
+    }
+</script>
+{% endblock %}
