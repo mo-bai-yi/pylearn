@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h1>💻 代码演示台</h1>
+    <p>在这里自由编写和运行 Python 代码，实时查看结果</p>
+</div>
+
+<div class="playground-layout">
+    <div class="playground-pane">
+        <div class="pane-header">
+            <span>📝 代码编辑器</span>
+        </div>
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="runCode()">▶ 运行</button>
+            <button class="btn btn-outline" onclick="resetCode()">↺ 重置</button>
+            <button class="btn btn-outline" onclick="clearOutput()">🗑 清空输出</button>
+        </div>
+        <div class="pane-body">
+            <textarea id="code-editor"># 欢迎来到 Pylearn 代码演示台！
+# 在这里编写你的 Python 代码，然后点击"运行"
+
+print("Hello, 世界！")
+
+# 试试计算
+a = 42
+b = 7
+print(f"{a} + {b} = {a + b}")
+print(f"{a} × {b} = {a * b}")
+
+# 试试列表
+fruits = ["苹果", "香蕉", "橙子"]
+for f in fruits:
+    print(f"我喜欢吃 {f}")
+</textarea>
+        </div>
+    </div>
+
+    <div class="playground-pane">
+        <div class="pane-header">
+            <span>📋 输出结果</span>
+        </div>
+        <div class="pane-body">
+            <div id="output" class="output-area empty">点击「运行」查看代码输出...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/runner.js') }}"></script>
+{% endblock %}

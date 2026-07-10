@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Pylearn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{{ url_for('main.index') }}" class="navbar-brand">Pylearn</a>
+        <ul class="navbar-nav">
+            <li><a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">首页</a></li>
+            <li><a href="{{ url_for('lessons.lesson_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('lessons.') %}active{% endif %}">教程</a></li>
+            <li><a href="/challenges" class="nav-link">闯关</a></li>
+            <li><a href="{{ url_for('playground.playground') }}" class="nav-link {% if request.endpoint == 'playground.playground' %}active{% endif %}">演示台</a></li>
+            <li><a href="/turtle" class="nav-link">Turtle</a></li>
+            <li><a href="/settings" class="nav-link {% if request.endpoint == 'update.settings' %}active{% endif %}">⚙️</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

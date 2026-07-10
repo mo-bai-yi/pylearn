@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h1>🎮 编程闯关</h1>
+    <p>通过编程挑战检验你的学习成果，每过一关解锁下一关</p>
+</div>
+
+<div class="challenge-list">
+    {% for chal in challenges %}
+    {% set p = progress.get(chal.id) %}
+    {% set is_passed = p and p['passed'] %}
+    {% set is_locked = loop.index > 1 and not progress.get(challenges[loop.index0 - 1].id, {}).get('passed') %}
+
+    <a href="{{ url_for('challenges.challenge_play', challenge_id=chal.id) }}"
+       class="challenge-card {% if is_locked and not is_passed %}locked{% endif %}"
+       {% if is_locked and not is_passed %}onclick="return false;"{% endif %}>
+        <div class="badge {% if is_passed %}badge-done{% elif is_locked %}badge-locked{% else %}badge-open{% endif %}">
+            {% if is_passed %}✅{% elif is_locked %}🔒{% else %}{{ loop.index }}{% endif %}
+        </div>
+        <div style="flex:1">
+            <h3 style="font-size:16px;">{{ chal.title }}</h3>
+            <p style="font-size:13px;color:var(--text-muted);">
+                {% if is_passed %}✅ 已通过{% elif is_locked %}🔒 未解锁{% else %}点击开始挑战{% endif %}
+                {% if p %} · 尝试 {{ p.attempts }} 次{% endif %}
+            </p>
+        </div>
+        {% if not is_locked or is_passed %}
+        <span style="color:var(--primary);font-size:20px;">→</span>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

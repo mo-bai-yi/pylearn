@@ -1,0 +1,17 @@
+title: 列表求和
+description: |
+  给定一个数字列表 `numbers = [3, 7, 2, 9, 5, 1, 8]`，
+  编写代码计算所有元素的和，并打印结果。
+
+  要求：
+  - 用 for 循环遍历列表并累加
+  - 最后打印 "总和是：XX"
+initial_code: |
+  numbers = [3, 7, 2, 9, 5, 1, 8]
+
+  # 请计算总和
+  total = 0
+  # 你的代码
+tests:
+  - input: ""
+    expected: "总和是：35"

@@ -1,0 +1,29 @@
+title: 词频统计
+description: |
+  给定一个句子 `"apple banana apple orange banana apple grape"`，
+  编写代码统计每个单词出现的次数并打印结果。
+
+  要求：
+  - 将句子按空格拆分为单词列表
+  - 用字典统计每个单词出现次数
+  - 遍历字典，每行打印 `单词: 次数`
+
+  预期输出：
+  ```
+  apple: 3
+  banana: 2
+  orange: 1
+  grape: 1
+  ```
+initial_code: |
+  sentence = "apple banana apple orange banana apple grape"
+
+  # 拆分单词
+  words = sentence.split()
+  # 统计词频
+  count = {}
+
+  # 你的代码
+tests:
+  - input: ""
+    expected: "apple: 3\nbanana: 2\norange: 1\ngrape: 1"

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h1>⚙️ 设置与更新</h1>
+</div>
+
+<div style="display:grid;gap:20px;max-width:600px;">
+    <!-- 版本信息卡片 -->
+    <div class="card">
+        <h3 style="margin-bottom:12px;">📦 当前版本</h3>
+        <div id="local-version" style="font-size:14px;color:var(--text-muted);">加载中...</div>
+    </div>
+
+    <!-- 检查更新卡片 -->
+    <div class="card">
+        <h3 style="margin-bottom:12px;">🔄 检查更新</h3>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">
+            从更新服务器获取最新版本的内容和程序。
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="checkForUpdates()">🔍 检查更新</button>
+            <button class="btn btn-success" id="apply-btn" style="display:none;" onclick="applyUpdate()">⬇️ 下载更新</button>
+        </div>
+        <div id="update-status" style="margin-top:12px;font-size:14px;"></div>
+    </div>
+
+</div>
+
+<script>
+async function checkForUpdates() {
+    const status = document.getElementById('update-status');
+    status.innerHTML = '⏳ 正在检查更新...';
+
+    try {
+        const resp = await fetch('/api/update/check?force=1');
+        const data = await resp.json();
+
+        if (data.error) {
+            status.innerHTML = `<div class="error-msg">❌ ${data.error}</div>`;
+            return;
+        }
+
+        if (data.has_update) {
+            status.innerHTML = `
+                <div style="color:var(--success);font-weight:600;">✅ 发现新版本！</div>
+                <div style="font-size:13px;margin-top:4px;">
+                    本地: ${data.local_version} → 远程: ${data.remote_version}
+                </div>
+                ${data.changelog ? `<div style="font-size:13px;margin-top:4px;color:var(--text-muted);">${data.changelog}</div>` : ''}
+            `;
+            document.getElementById('apply-btn').style.display = 'inline-flex';
+        } else {
+            status.innerHTML = `<div style="color:var(--text-muted);">✅ 已是最新版本 (${data.local_version})</div>`;
+        }
+    } catch (e) {
+        status.innerHTML = `<div class="error-msg">❌ 请求失败：${e.message}</div>`;
+    }
+}
+
+async function applyUpdate() {
+    const status = document.getElementById('update-status');
+    status.innerHTML = '⏳ 正在下载更新...';
+    document.getElementById('apply-btn').disabled = true;
+
+    try {
+        const resp = await fetch('/api/update/apply', {method: 'POST'});
+        const data = await resp.json();
+
+        if (data.success) {
+            status.innerHTML = `
+                <div style="color:var(--success);font-weight:600;">✅ 更新成功！</div>
+                <div style="font-size:13px;margin-top:4px;color:var(--text-muted);">
+                    更新了 ${data.updated.length} 个文件
+                </div>
+            `;
+            // 刷新本页以展示更新后的版本号
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            status.innerHTML = `<div class="error-msg">❌ 更新失败：${data.error}</div>`;
+            document.getElementById('apply-btn').disabled = false;
+        }
+    } catch (e) {
+        status.innerHTML = `<div class="error-msg">❌ 请求失败：${e.message}</div>`;
+        document.getElementById('apply-btn').disabled = false;
+    }
+}
+
+// 加载本地版本信息
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const resp = await fetch('/api/update/version');
+        const data = await resp.json();
+        const el = document.getElementById('local-version');
+        el.innerHTML = `
+            <strong>${data.name || 'Pylearn'}</strong> v${data.version}
+            <span style="color:var(--text-muted);margin-left:12px;">${data.updated || ''}</span>
+        `;
+    } catch (e) {
+        document.getElementById('local-version').textContent = '无法加载';
+    }
+});
+</script>
+{% endblock %}

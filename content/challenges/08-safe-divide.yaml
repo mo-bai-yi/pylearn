@@ -1,0 +1,29 @@
+title: 安全除法
+description: |
+  编写一个 safe_divide(a, b) 函数，用 try-except 处理异常。
+
+  要求：
+  - 如果 b 为 0，返回 "不能除以零"
+  - 如果 a 或 b 不是数字（TypeError），返回 "请输入数字"
+  - 否则返回 a / b 的结果
+
+  测试代码已经写好，你只需实现 safe_divide 函数。
+initial_code: |
+  def safe_divide(a, b):
+      try:
+          # 你的代码
+          pass
+      except ZeroDivisionError:
+          # 你的代码
+          pass
+      except TypeError:
+          # 你的代码
+          pass
+
+  # 测试代码（不要修改）
+  print(safe_divide(10, 2))
+  print(safe_divide(10, 0))
+  print(safe_divide(10, "a"))
+tests:
+  - input: ""
+    expected: "5.0\n不能除以零\n请输入数字"

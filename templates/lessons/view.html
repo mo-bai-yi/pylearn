@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="lesson-layout">
+    <!-- 左侧：教程内容 -->
+    <div class="lesson-content">
+        <div id="lesson-content"><p style="color:var(--text-muted);">⏳ 加载中...</p></div>
+
+        <div class="lesson-nav">
+            {% if prev %}
+            <a href="{{ url_for('lessons.lesson_view', lesson_id=prev.id) }}">← {{ prev.title }}</a>
+            {% else %}
+            <span></span>
+            {% endif %}
+            {% if next %}
+            <a href="{{ url_for('lessons.lesson_view', lesson_id=next.id) }}">{{ next.title }} →</a>
+            {% else %}
+            <span></span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 右侧：代码演示台 -->
+    <div class="playground-pane" style="height:100%;">
+        <div class="pane-header">
+            <span>💻 试试看</span>
+        </div>
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="runLessonCode()">▶ 运行</button>
+            <button class="btn btn-outline" onclick="resetLessonCode()">↺ 重置</button>
+        </div>
+        <div class="pane-body" style="display:flex; flex-direction:column;">
+            <textarea id="lesson-editor" style="flex:1;"># 在这里尝试本章的代码示例
+print("开始学习！")
+</textarea>
+            <div id="lesson-output" class="output-area empty" style="max-height:200px; border-top:1px solid var(--border);">点击「运行」查看输出...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script>
+    // 渲染 Markdown 内容
+    const content = {{ lesson.content | tojson }};
+    document.getElementById('lesson-content').innerHTML = marked.parse(content);
+
+    // 设置编辑器
+    const lessonEditor = CodeMirror.fromTextArea(document.getElementById('lesson-editor'), {
+        mode: 'python',
+        lineNumbers: true,
+        indentUnit: 4,
+        theme: 'material-darker',
+        autoCloseBrackets: true,
+    });
+    lessonEditor.setSize(null, '100%');
+
+    function runLessonCode() {
+        const output = document.getElementById('lesson-output');
+        output.className = 'output-area';
+        output.textContent = '⏳ 运行中...';
+
+        fetch('/api/run', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: lessonEditor.getValue()})
+        })
+        .then(r => r.json())
+        .then(data => {
+            let html = '';
+            if (data.stdout) html += escHtml(data.stdout);
+            if (data.stderr) html += '<div class="stderr">' + escHtml(data.stderr) + '</div>';
+            if (data.error) html += '<div class="error-msg">' + escHtml(data.error) + '</div>';
+            if (!html) html = '✅ 执行完成（无输出）';
+            output.innerHTML = html;
+        })
+        .catch(e => {
+            output.innerHTML = '<div class="error-msg">❌ 请求失败：' + e.message + '</div>';
+        });
+    }
+
+    function resetLessonCode() {
+        lessonEditor.setValue('# 在这里尝试本章的代码示例\nprint("开始学习！")');
+    }
+
+    function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+</script>
+{% endblock %}
