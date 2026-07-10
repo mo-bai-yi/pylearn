@@ -56,10 +56,30 @@ def build():
         '--add-data', f'version.json{os.pathsep}.',
         '--hidden-import', 'yaml',
         '--hidden-import', 'flask',
+        '--hidden-import', 'jinja2',
+        '--hidden-import', 'werkzeug',
+        '--hidden-import', 'markupsafe',
+        '--hidden-import', 'itsdangerous',
         '--hidden-import', 'webview',
-        '--collect-all', 'flask',
+        '--exclude-module', 'tkinter',
+        '--exclude-module', 'matplotlib',
+        '--exclude-module', 'numpy',
+        '--exclude-module', 'pandas',
+        '--exclude-module', 'PIL',
+        '--exclude-module', 'cv2',
+        '--exclude-module', 'scipy',
+        '--exclude-module', 'notebook',
+        '--exclude-module', 'jupyter',
+        '--strip',
+        '--optimize', '2',
         'run.py',
     ]
+
+    # 检测 UPX（有就自动用，压缩 exe 加速加载）
+    upx_path = shutil.which('upx') or shutil.which('upx.exe')
+    if upx_path:
+        cmd.extend(['--upx-dir', os.path.dirname(upx_path)])
+        print("  UPX: 已启用")
 
     # 桌面模式：Windows 下隐藏黑窗口，Linux/mac 不需要
     if is_windows and '--browser' not in sys.argv:
