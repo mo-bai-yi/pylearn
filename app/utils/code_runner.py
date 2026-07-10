@@ -5,25 +5,25 @@ import subprocess
 import tempfile
 import os
 import ast
+import shutil
 
 # 获取合适的 Python 解释器路径
 def _get_python_exe():
     """获取可用的 Python 解释器（兼容 PyInstaller 打包的 exe）"""
     # 如果是打包后的 exe，sys.executable 是 pylearn.exe 本身
     if getattr(sys, 'frozen', False):
-        # 1. 优先找打包目录里的 _internal/python.exe
+        # 1. 优先找打包目录里的 _internal/pythonw.exe（无窗口）
         meipass = getattr(sys, '_MEIPASS', None)
         if meipass:
-            bundled = os.path.join(meipass, 'python.exe')
-            if os.path.exists(bundled):
-                return bundled
+            for name in ['pythonw.exe', 'python.exe']:
+                bundled = os.path.join(meipass, name)
+                if os.path.exists(bundled):
+                    return bundled
 
-        # 2. 找系统 PATH 里的 python
-        for name in ['python.exe', 'python3.exe', 'python']:
-            found = subprocess.run(['where', name] if os.name == 'nt' else ['which', name],
-                                  capture_output=True, text=True, timeout=3)
-            if found.returncode == 0:
-                exe_path = found.stdout.strip().split('\n')[0]
+        # 2. 找系统 PATH 里的 pythonw/python（无窗口优先）
+        for name in ['pythonw.exe', 'python.exe', 'python3.exe', 'python']:
+            exe_path = shutil.which(name)
+            if exe_path:
                 # 避免找到自己（同一个 exe）
                 if os.path.normpath(exe_path) != os.path.normpath(sys.executable):
                     return exe_path
@@ -190,12 +190,16 @@ def run_code(source: str, timeout: int = 5):
     # 捕获 print 输出并运行
     try:
         if _PYTHON_EXE:
+            kwargs = {}
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
             result = subprocess.run(
                 [_PYTHON_EXE, '-c', source],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
                 cwd=TEMP_DIR,
+                **kwargs,
             )
             return {
                 'stdout': result.stdout,
