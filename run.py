@@ -10,6 +10,7 @@
 import sys
 import os
 import threading
+import logging
 from app import create_app
 
 app = create_app()
@@ -18,7 +19,13 @@ FLASK_PORT = 5000
 
 
 def start_flask():
-    """后台启动 Flask"""
+    """后台启动 Flask（exe 环境下禁用日志输出，防止弹黑窗）"""
+    if getattr(sys, 'frozen', False):
+        log = logging.getLogger('werkzeug')
+        log.setLevel(logging.ERROR)
+        log.disabled = True
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=False, use_reloader=False)
 
 
