@@ -46,6 +46,13 @@ def mode_browser():
 
 def mode_desktop():
     """桌面窗口模式——原生窗口，无需浏览器"""
+    # 关闭 PyInstaller 启动画面
+    try:
+        import pyi_splash
+        pyi_splash.close()
+    except ImportError:
+        pass
+
     import webview
     url = f'http://{FLASK_HOST}:{FLASK_PORT}'
 
@@ -61,15 +68,31 @@ def mode_desktop():
 ╚═══════════════════════════════════════════╝
     """)
 
+    WIN_W, WIN_H = 1200, 800
+
+    # 计算屏幕居中位置
+    try:
+        screens = webview.screens
+        if screens:
+            s = screens[0]
+            center_x = (s.width - WIN_W) // 2
+            center_y = (s.height - WIN_H) // 2
+        else:
+            center_x = center_y = None
+    except Exception:
+        center_x = center_y = None
+
     window = webview.create_window(
         title='Pylearn - 学 Python，从这里开始',
         url=url,
-        width=1200,
-        height=800,
+        width=WIN_W,
+        height=WIN_H,
+        x=center_x,
+        y=center_y,
         resizable=True,
         min_size=(900, 600),
     )
-    webview.start()  # ← 必须调用 start() 才会显示窗口
+    webview.start()
 
 
 if __name__ == '__main__':
